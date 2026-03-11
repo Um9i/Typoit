@@ -103,7 +103,7 @@
     .welcome .btn { margin-top: 1.5rem; }
 
     /* ---- Game ---- */
-    .game { text-align: center; animation: fadeIn 0.35s ease; width: 90%; max-width: 520px; }
+    .game { text-align: center; animation: fadeIn 0.35s ease; width: 90%; max-width: 520px; cursor: text; }
     .game h1 { font-size: 2rem; color: #e94560; margin-bottom: 1.5rem; }
     .word-display {
       font-size: 3rem;
@@ -334,6 +334,10 @@
         if (globalTimerIdRef.current) { clearInterval(globalTimerIdRef.current); globalTimerIdRef.current = null; }
       }, []);
 
+      const focusInput = useCallback(() => {
+        if (inputRef.current && !inputRef.current.disabled) inputRef.current.focus();
+      }, []);
+
       const nextWord = useCallback(() => {
         const w = pickWord();
         setCurrentWord(w);
@@ -423,18 +427,21 @@
           <HUD lives={lives} countdownMs={countdownMs} visible={screen === "game"} />
           {screen === "welcome" && <Welcome onStart={startGame} />}
           {screen === "game" && (
-            <div className="game">
+            <div className="game" onClick={focusInput}>
               <h1>Typo.it</h1>
               <div className="word-display">{currentWord}</div>
               <input
                 ref={inputRef}
                 className={"word-input" + (exploding ? " explode" : "")}
                 type="text"
+                inputMode="text"
                 autoComplete="off"
+                autoFocus
                 placeholder="Type the word…"
                 disabled={inputDisabled}
                 onInput={handleInput}
                 onAnimationEnd={() => setExploding(false)}
+                onBlur={() => { setTimeout(focusInput, 10); }}
               />
               <div className="word-timer">{wordTimerMs > 0 ? fmtMs(wordTimerMs) : ""}</div>
               <div className={"feedback " + feedback.type}>{feedback.text}</div>
