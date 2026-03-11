@@ -281,7 +281,6 @@
       const [wordTimerMs, setWordTimerMs] = useState(0);
       const [countdownMs, setCountdownMs] = useState(GAME_DURATION);
       const [exploding, setExploding] = useState(false);
-      const [inputDisabled, setInputDisabled] = useState(false);
 
       const inputRef = useRef(null);
       const wordStartRef = useRef(0);
@@ -291,6 +290,7 @@
       const globalTimerIdRef = useRef(null);
       const gameStartTimeRef = useRef(0);
       const gameEndedRef = useRef(false);
+      const lockedRef = useRef(false);
       const livesRef = useRef(MAX_LIVES);
       const logRef = useRef([]);
       const currentWordRef = useRef("");
@@ -335,7 +335,7 @@
       }, []);
 
       const focusInput = useCallback(() => {
-        if (inputRef.current && !inputRef.current.disabled) inputRef.current.focus();
+        if (inputRef.current) inputRef.current.focus();
       }, []);
 
       const nextWord = useCallback(() => {
@@ -345,9 +345,9 @@
         setFeedback({ text: "", type: "" });
         setLastTime("");
         setExploding(false);
-        setInputDisabled(false);
+        lockedRef.current = false;
         resetWordTimer();
-        setTimeout(() => { if (inputRef.current) { inputRef.current.value = ""; inputRef.current.disabled = false; inputRef.current.focus(); } }, 50);
+        setTimeout(() => { if (inputRef.current) { inputRef.current.value = ""; inputRef.current.focus(); } }, 10);
       }, [pickWord, resetWordTimer]);
 
       const endGame = useCallback(() => {
@@ -391,7 +391,7 @@
         setFeedback({ text: "Correct!", type: "correct" });
         setLastTime("Time: " + elapsed.toFixed(2) + "s");
         resetWordTimer();
-        setInputDisabled(true);
+        lockedRef.current = true;
         setTimeout(() => nextWord(), 900);
       }, [nextWord, resetWordTimer]);
 
@@ -399,7 +399,7 @@
         setExploding(true);
         const newLives = livesRef.current - 1;
         setLives(newLives); livesRef.current = newLives;
-        setInputDisabled(true);
+        lockedRef.current = true;
         if (newLives <= 0) {
           setFeedback({ text: "No lives left!", type: "incorrect" });
           setTimeout(() => endGame(), 1000);
@@ -411,7 +411,7 @@
 
       const handleInput = useCallback((e) => {
         const typed = e.target.value;
-        if (typed === "" || inputDisabled) return;
+        if (typed === "" || lockedRef.current) return;
         if (!timerRunningRef.current) startPerWordTimer();
         const word = currentWordRef.current;
         if (typed === word) {
@@ -420,7 +420,7 @@
           return;
         }
         if (typed !== word.substring(0, typed.length)) handleWrongKey();
-      }, [inputDisabled, startPerWordTimer, handleCorrect, handleWrongKey]);
+      }, [startPerWordTimer, handleCorrect, handleWrongKey]);
 
       return (
         <>
@@ -438,7 +438,6 @@
                 autoComplete="off"
                 autoFocus
                 placeholder="Type the word…"
-                disabled={inputDisabled}
                 onInput={handleInput}
                 onAnimationEnd={() => setExploding(false)}
                 onBlur={() => { setTimeout(focusInput, 10); }}
