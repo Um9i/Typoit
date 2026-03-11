@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Typo.it — Keyboard Training</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #0f0f1a;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #root {
+      width: 100%;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ---- Shared ---- */
+    .btn {
+      background: linear-gradient(135deg, #e94560, #c73e54);
+      color: #fff;
+      border: none;
+      padding: 14px 40px;
+      font-size: 1.15rem;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.2s;
+      box-shadow: 0 4px 14px rgba(233, 69, 96, 0.35);
+      letter-spacing: 0.03em;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(233, 69, 96, 0.5);
+    }
+    .btn:active { transform: translateY(0); }
+
+    /* ---- HUD ---- */
+    .hud {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 1.8rem;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .countdown {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 1.5rem;
+      color: #4ecca3;
+      text-shadow: 0 0 8px rgba(78, 204, 163, 0.4);
+      transition: color 0.3s;
+    }
+    .countdown.urgent {
+      color: #e94560;
+      text-shadow: 0 0 12px rgba(233, 69, 96, 0.5);
+    }
+    .word-timer {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 1rem;
+      color: #4ecca3;
+      margin-top: 0.6rem;
+      min-height: 1.3rem;
+      opacity: 0.8;
+    }
+    .hearts { font-size: 1.8rem; letter-spacing: 0.35em; user-select: none; }
+    .hearts span { transition: opacity 0.3s, transform 0.3s; display: inline-block; }
+    .hearts .alive { color: #e94560; filter: drop-shadow(0 0 4px rgba(233, 69, 96, 0.6)); }
+    .hearts .dead  { color: #e94560; opacity: 0.15; transform: scale(0.85); }
+
+    /* ---- Welcome ---- */
+    .welcome { text-align: center; animation: fadeIn 0.5s ease; }
+    .welcome h1 {
+      font-size: 3.5rem;
+      color: #e94560;
+      margin-bottom: 0.3rem;
+      text-shadow: 0 0 30px rgba(233, 69, 96, 0.3);
+    }
+    .welcome .subtitle {
+      font-size: 1rem;
+      color: #888;
+      margin-bottom: 2rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+    .welcome p { font-size: 1.1rem; line-height: 1.7; margin-bottom: 0.6rem; color: #aaa; }
+    .welcome .btn { margin-top: 1.5rem; }
+
+    /* ---- Game ---- */
+    .game { text-align: center; animation: fadeIn 0.35s ease; width: 90%; max-width: 520px; }
+    .game h1 { font-size: 2rem; color: #e94560; margin-bottom: 1.5rem; }
+    .word-display {
+      font-size: 3rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: #fff;
+      min-height: 4rem;
+      margin-bottom: 1.5rem;
+      text-shadow: 0 0 12px rgba(255, 255, 255, 0.1);
+    }
+    .word-input {
+      width: 75%;
+      padding: 14px 18px;
+      font-size: 1.4rem;
+      border: 2px solid #2a2a40;
+      border-radius: 8px;
+      background: #16213e;
+      color: #eee;
+      text-align: center;
+      outline: none;
+      transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+    }
+    .word-input:focus {
+      border-color: #e94560;
+      box-shadow: 0 0 12px rgba(233, 69, 96, 0.25);
+    }
+    .word-input.explode {
+      animation: shake 0.45s ease;
+      border-color: #e94560 !important;
+      background: #2a1020 !important;
+    }
+    .feedback { font-size: 1.15rem; margin-top: 1rem; min-height: 1.6rem; font-weight: 700; }
+    .feedback.correct { color: #4ecca3; }
+    .feedback.incorrect { color: #e94560; }
+    .time-display { font-size: 0.9rem; color: #666; margin-top: 0.4rem; min-height: 1.2rem; }
+
+    /* ---- Results ---- */
+    .results { text-align: center; animation: fadeIn 0.5s ease; }
+    .results h2 { font-size: 2.2rem; color: #e94560; margin-bottom: 1.2rem; }
+    .results .stat { font-size: 1.15rem; margin-bottom: 0.7rem; color: #bbb; }
+    .results .stat span { color: #4ecca3; font-weight: 700; }
+    .results .btn { margin-top: 1.5rem; }
+
+    /* ---- Word Log ---- */
+    .log-table {
+      margin: 2.5rem auto 2rem;
+      border-collapse: collapse;
+      width: 90%;
+      max-width: 440px;
+      font-size: 0.92rem;
+      animation: fadeIn 0.3s ease;
+    }
+    .log-table th, .log-table td { padding: 8px 16px; border-bottom: 1px solid #1e1e30; text-align: center; }
+    .log-table th {
+      color: #e94560;
+      font-weight: 700;
+      border-bottom: 2px solid #e94560;
+      text-transform: uppercase;
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+    }
+    .log-table td:nth-child(2) { text-align: left; font-family: 'Courier New', Courier, monospace; color: #ddd; }
+    .log-table td:nth-child(3) { color: #4ecca3; font-family: 'Courier New', Courier, monospace; }
+    .log-table tbody tr { transition: background 0.2s; }
+    .log-table tbody tr:hover { background: rgba(78, 204, 163, 0.05); }
+    .log-table tbody tr:last-child { animation: slideIn 0.25s ease; }
+
+    /* ---- Animations ---- */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-12px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes shake {
+      0%   { transform: translateX(0); }
+      10%  { transform: translateX(-8px); }
+      20%  { transform: translateX(8px); }
+      30%  { transform: translateX(-6px); }
+      40%  { transform: translateX(6px); }
+      50%  { transform: translateX(-4px); }
+      60%  { transform: translateX(4px); }
+      70%  { transform: translateX(-2px); }
+      80%  { transform: translateX(2px); }
+      100% { transform: translateX(0); }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useRef, useCallback, useEffect } = React;
+
+    const MAX_LIVES = 3;
+
+    const GAME_DURATION = 60000; // 1 minute
+
+    function fmtMs(ms) {
+      const m = Math.floor(ms / 60000);
+      const s = Math.floor((ms % 60000) / 1000);
+      const mi = ms % 1000;
+      return String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0") + ":" + String(mi).padStart(3, "0");
+    }
+
+    function HUD({ lives, countdownMs, visible }) {
+      if (!visible) return null;
+      const urgent = countdownMs < 30000;
+      return (
+        <div className="hud">
+          <div className={"countdown" + (urgent ? " urgent" : "")}>{fmtMs(countdownMs)}</div>
+          <div className="hearts">
+            {Array.from({ length: MAX_LIVES }, (_, i) => (
+              <span key={i} className={i < lives ? "alive" : "dead"}>&#9829;</span>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    function Welcome({ onStart }) {
+      return (
+        <div className="welcome">
+          <h1>Typo.it</h1>
+          <div className="subtitle">Keyboard Training</div>
+          <p>Type the word shown as fast as you can.</p>
+          <p>Miss a letter and you lose a life — 3 lives total.</p>
+          <button className="btn" onClick={onStart}>Play</button>
+        </div>
+      );
+    }
+
+    function Results({ log, onReplay }) {
+      const count = log.length;
+      let avgTimeStr = "N/A", wpmStr = "N/A";
+      if (count > 0) {
+        const sum = log.reduce((a, e) => a + e.time, 0);
+        avgTimeStr = (sum / count).toFixed(2);
+        wpmStr = (count / (sum / 60)).toFixed(1);
+      }
+      return (
+        <div className="results">
+          <h2>Game Over</h2>
+          <p className="stat">Words typed correctly: <span>{count}</span></p>
+          <p className="stat">Average time per word: <span>{avgTimeStr}s</span></p>
+          <p className="stat">Words per minute: <span>{wpmStr}</span></p>
+          <button className="btn" onClick={onReplay}>Play Again</button>
+        </div>
+      );
+    }
+
+    function WordLog({ log }) {
+      if (log.length === 0) return null;
+      return (
+        <table className="log-table">
+          <thead><tr><th>#</th><th>Word</th><th>Time (s)</th></tr></thead>
+          <tbody>
+            {log.map((entry, i) => (
+              <tr key={i}><td>{i + 1}</td><td>{entry.word}</td><td>{entry.time.toFixed(3)}</td></tr>
+            ))}
+          </tbody>
+        </table>
+      );
+    }
+
+    function App() {
+      const [screen, setScreen] = useState("welcome");
+      const [wordlist, setWordlist] = useState([]);
+      const [currentWord, setCurrentWord] = useState("");
+      const [lives, setLives] = useState(MAX_LIVES);
+      const [log, setLog] = useState([]);
+      const [feedback, setFeedback] = useState({ text: "", type: "" });
+      const [lastTime, setLastTime] = useState("");
+      const [wordTimerMs, setWordTimerMs] = useState(0);
+      const [countdownMs, setCountdownMs] = useState(GAME_DURATION);
+      const [exploding, setExploding] = useState(false);
+      const [inputDisabled, setInputDisabled] = useState(false);
+
+      const inputRef = useRef(null);
+      const wordStartRef = useRef(0);
+      const timerStartRef = useRef(0);
+      const timerIdRef = useRef(null);
+      const timerRunningRef = useRef(false);
+      const globalTimerIdRef = useRef(null);
+      const gameStartTimeRef = useRef(0);
+      const gameEndedRef = useRef(false);
+      const livesRef = useRef(MAX_LIVES);
+      const logRef = useRef([]);
+      const currentWordRef = useRef("");
+
+      useEffect(() => { livesRef.current = lives; }, [lives]);
+      useEffect(() => { logRef.current = log; }, [log]);
+      useEffect(() => { currentWordRef.current = currentWord; }, [currentWord]);
+
+      useEffect(() => {
+        fetch("wordlist.txt")
+          .then(r => { if (!r.ok) throw new Error(); return r.text(); })
+          .then(t => setWordlist(t.split("\n").map(w => w.trim()).filter(w => w.length > 0)))
+          .catch(() => alert("Could not load wordlist.txt. Serve with: python3 -m http.server"));
+      }, []);
+
+      const pickWord = useCallback(() => {
+        if (wordlist.length === 0) return "";
+        return wordlist[Math.floor(Math.random() * wordlist.length)];
+      }, [wordlist]);
+
+      const stopWordTimer = useCallback(() => {
+        timerRunningRef.current = false;
+        if (timerIdRef.current) { clearInterval(timerIdRef.current); timerIdRef.current = null; }
+      }, []);
+
+      const resetWordTimer = useCallback(() => {
+        stopWordTimer();
+        setWordTimerMs(0);
+      }, [stopWordTimer]);
+
+      const startPerWordTimer = useCallback(() => {
+        timerStartRef.current = performance.now();
+        wordStartRef.current = performance.now();
+        timerRunningRef.current = true;
+        timerIdRef.current = setInterval(() => {
+          setWordTimerMs(Math.floor(performance.now() - timerStartRef.current));
+        }, 47);
+      }, []);
+
+      const stopGlobalTimer = useCallback(() => {
+        if (globalTimerIdRef.current) { clearInterval(globalTimerIdRef.current); globalTimerIdRef.current = null; }
+      }, []);
+
+      const nextWord = useCallback(() => {
+        const w = pickWord();
+        setCurrentWord(w);
+        currentWordRef.current = w;
+        setFeedback({ text: "", type: "" });
+        setLastTime("");
+        setExploding(false);
+        setInputDisabled(false);
+        resetWordTimer();
+        setTimeout(() => { if (inputRef.current) { inputRef.current.value = ""; inputRef.current.focus(); } }, 0);
+      }, [pickWord, resetWordTimer]);
+
+      const endGame = useCallback(() => {
+        stopWordTimer();
+        stopGlobalTimer();
+        gameEndedRef.current = true;
+        setScreen("results");
+      }, [stopWordTimer, stopGlobalTimer]);
+
+      const startGame = useCallback(() => {
+        setLives(MAX_LIVES); livesRef.current = MAX_LIVES;
+        setLog([]); logRef.current = [];
+        setCountdownMs(GAME_DURATION);
+        gameEndedRef.current = false;
+        gameStartTimeRef.current = performance.now();
+        globalTimerIdRef.current = setInterval(() => {
+          const remaining = GAME_DURATION - Math.floor(performance.now() - gameStartTimeRef.current);
+          if (remaining <= 0) {
+            setCountdownMs(0);
+            // use a timeout so endGame ref is current
+            setTimeout(() => {
+              if (!gameEndedRef.current) {
+                gameEndedRef.current = true;
+                stopWordTimer();
+                stopGlobalTimer();
+                setScreen("results");
+              }
+            }, 0);
+          } else {
+            setCountdownMs(remaining);
+          }
+        }, 47);
+        setScreen("game");
+        setTimeout(() => nextWord(), 0);
+      }, [nextWord, stopWordTimer, stopGlobalTimer]);
+
+      const handleCorrect = useCallback((elapsed) => {
+        const entry = { word: currentWordRef.current, time: elapsed };
+        const newLog = [...logRef.current, entry];
+        setLog(newLog); logRef.current = newLog;
+        setFeedback({ text: "Correct!", type: "correct" });
+        setLastTime("Time: " + elapsed.toFixed(2) + "s");
+        resetWordTimer();
+        setInputDisabled(true);
+        setTimeout(() => nextWord(), 900);
+      }, [nextWord, resetWordTimer]);
+
+      const handleWrongKey = useCallback(() => {
+        setExploding(true);
+        const newLives = livesRef.current - 1;
+        setLives(newLives); livesRef.current = newLives;
+        setInputDisabled(true);
+        if (newLives <= 0) {
+          setFeedback({ text: "No lives left!", type: "incorrect" });
+          setTimeout(() => endGame(), 1000);
+          return;
+        }
+        setFeedback({ text: "Wrong key! Lost a life.", type: "incorrect" });
+        setTimeout(() => nextWord(), 1000);
+      }, [endGame, nextWord]);
+
+      const handleInput = useCallback((e) => {
+        const typed = e.target.value;
+        if (typed === "" || inputDisabled) return;
+        if (!timerRunningRef.current) startPerWordTimer();
+        const word = currentWordRef.current;
+        if (typed === word) {
+          const elapsed = (performance.now() - wordStartRef.current) / 1000;
+          handleCorrect(elapsed);
+          return;
+        }
+        if (typed !== word.substring(0, typed.length)) handleWrongKey();
+      }, [inputDisabled, startPerWordTimer, handleCorrect, handleWrongKey]);
+
+      return (
+        <>
+          <HUD lives={lives} countdownMs={countdownMs} visible={screen === "game"} />
+          {screen === "welcome" && <Welcome onStart={startGame} />}
+          {screen === "game" && (
+            <div className="game">
+              <h1>Typo.it</h1>
+              <div className="word-display">{currentWord}</div>
+              <input
+                ref={inputRef}
+                className={"word-input" + (exploding ? " explode" : "")}
+                type="text"
+                autoComplete="off"
+                placeholder="Type the word…"
+                disabled={inputDisabled}
+                onInput={handleInput}
+                onAnimationEnd={() => setExploding(false)}
+              />
+              <div className="word-timer">{wordTimerMs > 0 ? fmtMs(wordTimerMs) : ""}</div>
+              <div className={"feedback " + feedback.type}>{feedback.text}</div>
+              <div className="time-display">{lastTime}</div>
+            </div>
+          )}
+          {screen === "results" && <Results log={log} onReplay={startGame} />}
+          {(screen === "game" || screen === "results") && <WordLog log={log} />}
+        </>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
