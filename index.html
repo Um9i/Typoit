@@ -347,7 +347,7 @@
         setExploding(false);
         setInputDisabled(false);
         resetWordTimer();
-        setTimeout(() => { if (inputRef.current) { inputRef.current.value = ""; inputRef.current.focus(); } }, 0);
+        setTimeout(() => { if (inputRef.current) { inputRef.current.value = ""; inputRef.current.disabled = false; inputRef.current.focus(); } }, 50);
       }, [pickWord, resetWordTimer]);
 
       const endGame = useCallback(() => {
