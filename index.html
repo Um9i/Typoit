@@ -27,6 +27,12 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      overflow: hidden;
+    }
+
+    #root.playing {
+      justify-content: flex-start;
+      padding-top: 4rem;
     }
 
     /* ---- Shared ---- */
@@ -148,8 +154,15 @@
     .results .btn { margin-top: 1.5rem; }
 
     /* ---- Word Log ---- */
+    .log-wrap {
+      width: 100%;
+      max-height: 35vh;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #333 transparent;
+    }
     .log-table {
-      margin: 2.5rem auto 2rem;
+      margin: 1.5rem auto 2rem;
       border-collapse: collapse;
       width: 90%;
       max-width: 440px;
@@ -257,9 +270,13 @@
     }
 
     function WordLog({ log }) {
+      const wrapRef = useRef(null);
+      useEffect(() => {
+        if (wrapRef.current) wrapRef.current.parentElement.scrollTop = wrapRef.current.parentElement.scrollHeight;
+      }, [log.length]);
       if (log.length === 0) return null;
       return (
-        <table className="log-table">
+        <table className="log-table" ref={wrapRef}>
           <thead><tr><th>#</th><th>Word</th><th>Time (s)</th></tr></thead>
           <tbody>
             {log.map((entry, i) => (
@@ -281,6 +298,12 @@
       const [wordTimerMs, setWordTimerMs] = useState(0);
       const [countdownMs, setCountdownMs] = useState(GAME_DURATION);
       const [exploding, setExploding] = useState(false);
+
+      useEffect(() => {
+        const root = document.getElementById("root");
+        if (screen === "game" || screen === "results") root.classList.add("playing");
+        else root.classList.remove("playing");
+      }, [screen]);
 
       const inputRef = useRef(null);
       const wordStartRef = useRef(0);
@@ -448,7 +471,7 @@
             </div>
           )}
           {screen === "results" && <Results log={log} onReplay={startGame} />}
-          {(screen === "game" || screen === "results") && <WordLog log={log} />}
+          {(screen === "game" || screen === "results") && <div className="log-wrap"><WordLog log={log} /></div>}
         </>
       );
     }
