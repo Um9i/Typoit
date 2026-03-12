@@ -93,6 +93,27 @@
     .hearts .alive { color: #e94560; filter: drop-shadow(0 0 4px rgba(233, 69, 96, 0.6)); }
     .hearts .dead  { color: #e94560; opacity: 0.15; transform: scale(0.85); }
 
+    .music-toggle {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      background: #1a1a2e;
+      border: 2px solid #333;
+      color: #bbb;
+      font-size: 1.4rem;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      cursor: pointer;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .music-toggle:hover { border-color: #4ecca3; color: #fff; }
+    .music-toggle.playing { border-color: #4ecca3; color: #4ecca3; }
+
     /* ---- Welcome ---- */
     .welcome { text-align: center; animation: fadeIn 0.5s ease; }
     .welcome h1 {
@@ -142,6 +163,7 @@
     .mode-select {
       margin-top: 1.5rem;
       display: flex;
+      flex-wrap: wrap;
       justify-content: center;
       gap: 10px;
     }
@@ -202,6 +224,65 @@
     .results .stat { font-size: 1.15rem; margin-bottom: 0.7rem; color: #bbb; }
     .results .stat span { color: #4ecca3; font-weight: 700; }
     .results .btn { margin-top: 1.5rem; }
+
+    /* ---- Leaderboard ---- */
+    .name-input {
+      width: 200px;
+      padding: 10px 14px;
+      font-size: 1.1rem;
+      border: 2px solid #2a2a40;
+      border-radius: 8px;
+      background: #16213e;
+      color: #eee;
+      text-align: center;
+      outline: none;
+      margin-top: 1.2rem;
+      transition: border-color 0.2s;
+    }
+    .name-input:focus { border-color: #4ecca3; box-shadow: 0 0 8px rgba(78, 204, 163, 0.2); }
+    .name-label { font-size: 0.95rem; color: #aaa; margin-top: 1.2rem; display: block; }
+
+    .leaderboard { margin-top: 2rem; animation: fadeIn 0.4s ease; }
+    .leaderboard h3 {
+      font-size: 1.2rem;
+      color: #e94560;
+      margin-bottom: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .lb-table {
+      margin: 0 auto;
+      border-collapse: collapse;
+      width: 90%;
+      max-width: 440px;
+      font-size: 0.9rem;
+    }
+    .lb-table th, .lb-table td { padding: 6px 14px; border-bottom: 1px solid #1e1e30; text-align: center; }
+    .lb-table th {
+      color: #e94560;
+      font-weight: 700;
+      border-bottom: 2px solid #e94560;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.06em;
+    }
+    .lb-table td:nth-child(2) { text-align: left; color: #ddd; }
+    .lb-table td:nth-child(3) { color: #4ecca3; font-family: 'Courier New', Courier, monospace; }
+    .lb-table tbody tr { transition: background 0.2s; }
+    .lb-table tbody tr:hover { background: rgba(78, 204, 163, 0.05); }
+    .lb-table .highlight { background: rgba(78, 204, 163, 0.12); }
+    .lb-clear {
+      background: none;
+      border: 1px solid #333;
+      color: #666;
+      padding: 4px 12px;
+      font-size: 0.75rem;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 0.6rem;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .lb-clear:hover { color: #e94560; border-color: #e94560; }
 
     /* ---- Word Log ---- */
     .log-wrap {
@@ -267,6 +348,210 @@
 
     const GAME_DURATION = 60000; // 1 minute
 
+    /* ---- Procedural Music Engine (Chipzel / Super Hexagon style) ---- */
+    const MusicEngine = (() => {
+      let ctx = null;
+      let playing = false;
+      let gainNode = null;
+      let schedulerTimer = null;
+      let nextNoteTime = 0;
+      let step = 0;
+
+      const BPM = 180;
+      const NORMAL_STEP = 60 / BPM / 2;
+      let stepDur = NORMAL_STEP;
+      let resumeTimer = null;
+
+      const NOTE = {
+        C2:65.41,D2:73.42,Eb2:77.78,E2:82.41,F2:87.31,G2:98.00,Ab2:103.83,A2:110.0,Bb2:116.54,B2:123.47,
+        C3:130.81,D3:146.83,Eb3:155.56,E3:164.81,F3:174.61,G3:196.00,Ab3:207.65,A3:220.00,Bb3:233.08,B3:246.94,
+        C4:261.63,D4:293.66,Eb4:311.13,E4:329.63,F4:349.23,G4:392.00,Ab4:415.30,A4:440.00,Bb4:466.16,B4:493.88,
+        C5:523.25,D5:587.33,Eb5:622.25,E5:659.25,F5:698.46,G5:783.99,Ab5:830.61,A5:880.00,Bb5:932.33,B5:987.77,
+        C6:1046.50,D6:1174.66,Eb6:1244.51,E6:1318.51
+      };
+
+      // Intense minor arpeggios — Am, Dm, Em, Am (octave run)
+      const arpA = ['A4','C5','E5','A5','C6','A5','E5','C5'];
+      const arpB = ['D4','F4','A4','D5','F5','D5','A4','F4'];
+      const arpC = ['E4','G4','B4','E5','G5','E5','B4','G4'];
+      const arpD = ['A4','E5','A5','E5','C5','A4','E4','A4'];
+      const arpSeq = [...arpA, ...arpB, ...arpC, ...arpD];
+
+      // Counter-melody (syncopated, high register)
+      const arp2A = ['E5','0','A5','0','C6','0','A5','E5'];
+      const arp2B = ['D5','0','F5','0','A5','0','F5','D5'];
+      const arp2C = ['E5','0','G5','0','B5','0','G5','E5'];
+      const arp2D = ['A5','0','C6','0','E6','0','C6','A5'];
+      const arp2Seq = [...arp2A, ...arp2B, ...arp2C, ...arp2D];
+
+      // Lead melody — dramatic rising and falling phrases
+      const lead = ['A5','C6','E6','C6','A5','E5','A5','0',
+                    'D5','F5','A5','F5','D5','A4','D5','0',
+                    'E5','G5','B5','G5','E5','B4','E5','0',
+                    'A5','E5','C5','E5','A5','C6','E6','A5'];
+
+      // Heavy bass with movement
+      const bassLine = ['A2','A2','A2','C3','D2','D2','D3','D2',
+                        'E2','E2','E2','G2','A2','A2','E2','A2'];
+
+      // Aggressive drum patterns
+      const kickPat =  [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,1,1,0];
+      const snarePat = [0,0,0,0, 1,0,0,1, 0,0,0,0, 1,0,1,1];
+      const hihatPat = [1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1];
+      const crashPat = [1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0];
+
+      function osc(freq, dur, type, vol, time, detune) {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = type;
+        o.frequency.value = freq;
+        if (detune) o.detune.value = detune;
+        g.gain.setValueAtTime(vol, time);
+        g.gain.exponentialRampToValueAtTime(0.001, time + dur);
+        o.connect(g); g.connect(gainNode);
+        o.start(time); o.stop(time + dur);
+      }
+
+      function noise(dur, vol, time) {
+        const bufSize = ctx.sampleRate * dur;
+        const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        const hp = ctx.createBiquadFilter();
+        hp.type = 'highpass'; hp.frequency.value = 7000;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(vol, time);
+        g.gain.exponentialRampToValueAtTime(0.001, time + dur);
+        src.connect(hp); hp.connect(g); g.connect(gainNode);
+        src.start(time); src.stop(time + dur);
+      }
+
+      function kick(time) {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(180, time);
+        o.frequency.exponentialRampToValueAtTime(25, time + 0.15);
+        g.gain.setValueAtTime(0.45, time);
+        g.gain.exponentialRampToValueAtTime(0.001, time + 0.18);
+        o.connect(g); g.connect(gainNode);
+        o.start(time); o.stop(time + 0.18);
+        // Click layer
+        noise(0.015, 0.08, time);
+      }
+
+      function snare(time) {
+        osc(200, 0.06, 'triangle', 0.15, time, 0);
+        noise(0.1, 0.15, time);
+      }
+
+      function crash(time) {
+        noise(0.3, 0.08, time);
+      }
+
+      function scheduleStep(t) {
+        const s = step;
+        const s16 = s % 16;
+        const s32 = s % 32;
+        const s64 = s % 64;
+        const section = (s / 64 | 0) % 2; // alternate sections for variety
+
+        // Arpeggios — fast pulsing squares (always on)
+        const arpNote = arpSeq[s32];
+        if (arpNote !== '0' && NOTE[arpNote]) {
+          osc(NOTE[arpNote], stepDur * 0.5, 'square', 0.05, t, 0);
+          osc(NOTE[arpNote], stepDur * 0.5, 'square', 0.035, t, 10);
+          // Sub-octave pulse for thickness
+          osc(NOTE[arpNote] / 2, stepDur * 0.5, 'square', 0.02, t, 0);
+        }
+
+        // Counter-melody (second section only, sawtooth shimmer)
+        if (section === 1) {
+          const arp2Note = arp2Seq[s32];
+          if (arp2Note !== '0' && NOTE[arp2Note]) {
+            osc(NOTE[arp2Note], stepDur * 0.4, 'sawtooth', 0.025, t, 5);
+          }
+        }
+
+        // Lead melody every 2nd step
+        if (s % 2 === 0) {
+          const leadNote = lead[(s / 2 | 0) % lead.length];
+          if (leadNote !== '0' && NOTE[leadNote]) {
+            osc(NOTE[leadNote], stepDur * 1.8, 'sawtooth', 0.05, t, 0);
+            osc(NOTE[leadNote] * 1.003, stepDur * 1.8, 'sawtooth', 0.035, t, 0);
+            // Octave below for weight
+            osc(NOTE[leadNote] / 2, stepDur * 1.4, 'square', 0.02, t, 0);
+          }
+        }
+
+        // Bass every 2 steps — heavier
+        if (s % 2 === 0) {
+          const bassNote = bassLine[(s / 2 | 0) % bassLine.length];
+          if (NOTE[bassNote]) {
+            osc(NOTE[bassNote], stepDur * 3, 'sawtooth', 0.12, t, 0);
+            osc(NOTE[bassNote], stepDur * 3, 'square', 0.06, t, 0);
+            // Sub bass
+            osc(NOTE[bassNote] / 2, stepDur * 3.5, 'sine', 0.1, t, 0);
+          }
+        }
+
+        // Drums
+        if (kickPat[s16]) kick(t);
+        if (snarePat[s16]) snare(t);
+        if (hihatPat[s16]) noise(0.03, 0.05, t);
+        if (s64 === 0 && crashPat[0]) crash(t);
+
+        // Drum fill every 64 steps (end of 4-bar phrase)
+        if (s64 >= 60) {
+          if (s16 % 2 === 0) snare(t);
+          if (s64 === 63) kick(t);
+        }
+
+        step++;
+      }
+
+      function scheduler() {
+        while (nextNoteTime < ctx.currentTime + 0.1) {
+          scheduleStep(nextNoteTime);
+          nextNoteTime += stepDur;
+        }
+      }
+
+      return {
+        start() {
+          if (playing) return;
+          if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+          if (ctx.state === 'suspended') ctx.resume();
+          gainNode = ctx.createGain();
+          gainNode.gain.value = 0.5;
+          gainNode.connect(ctx.destination);
+          step = 0;
+          nextNoteTime = ctx.currentTime;
+          schedulerTimer = setInterval(scheduler, 25);
+          playing = true;
+        },
+        stop() {
+          if (!playing) return;
+          clearInterval(schedulerTimer);
+          schedulerTimer = null;
+          if (resumeTimer) { clearTimeout(resumeTimer); resumeTimer = null; }
+          stepDur = NORMAL_STEP;
+          playing = false;
+        },
+        slowDown() {
+          stepDur = NORMAL_STEP * 2.5;
+          if (resumeTimer) clearTimeout(resumeTimer);
+          resumeTimer = setTimeout(() => {
+            stepDur = NORMAL_STEP;
+            resumeTimer = null;
+          }, 800);
+        },
+        isPlaying() { return playing; }
+      };
+    })();
+
     function fmtMs(ms) {
       const m = Math.floor(ms / 60000);
       const s = Math.floor((ms % 60000) / 1000);
@@ -289,7 +574,7 @@
       );
     }
 
-    function Welcome({ onStart, wordLength, setWordLength, gameMode, setGameMode }) {
+    function Welcome({ onStart, wordLength, setWordLength, gameMode, setGameMode, playerName, setPlayerName }) {
       const lengths = [0, 4, 5, 6, 7, 8, 9, 10];
       return (
         <div className="welcome">
@@ -297,6 +582,15 @@
           <div className="subtitle">Keyboard Training</div>
           <p>Type the word shown as fast as you can.</p>
           <p>Miss a letter and you lose a life — 3 lives total.</p>
+          <label className="name-label">Your name:</label>
+          <input
+            className="name-input"
+            type="text"
+            maxLength={16}
+            value={playerName}
+            onChange={e => setPlayerName(e.target.value)}
+            placeholder="Enter name…"
+          />
           <div className="mode-select">
             <label>Mode:</label>
             <button className={"len-btn" + (gameMode === "word" ? " active" : "")} onClick={() => setGameMode("word")}>Word</button>
@@ -314,12 +608,32 @@
               ))}
             </div>
           )}
-          <button className="btn" onClick={onStart}>Play</button>
+          <button className="btn" onClick={onStart} disabled={!playerName.trim()}>Play</button>
         </div>
       );
     }
 
-    function Results({ log, onReplay, gameMode }) {
+    function Leaderboard({ entries, currentId, onClear, categoryLabel }) {
+      if (entries.length === 0) return null;
+      return (
+        <div className="leaderboard">
+          <h3>Leaderboard — {categoryLabel}</h3>
+          <table className="lb-table">
+            <thead><tr><th>#</th><th>Name</th><th>WPM</th><th>Words</th></tr></thead>
+            <tbody>
+              {entries.map((e, i) => (
+                <tr key={e.id} className={e.id === currentId ? "highlight" : ""}>
+                  <td>{i + 1}</td><td>{e.name}</td><td>{e.wpm}</td><td>{e.count}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <button className="lb-clear" onClick={onClear}>Clear Leaderboard</button>
+        </div>
+      );
+    }
+
+    function Results({ log, onReplay, gameMode, playerName, leaderboard, currentScoreId, onClearLeaderboard, categoryLabel }) {
       const count = log.length;
       const isSentence = gameMode === "sentence";
       let avgTimeStr = "N/A", wpmStr = "N/A";
@@ -337,6 +651,7 @@
           <p className="stat">Average time per {isSentence ? "sentence" : "word"}: <span>{avgTimeStr}s</span></p>
           <p className="stat">Words per minute: <span>{wpmStr}</span></p>
           <button className="btn" onClick={onReplay}>Play Again</button>
+          <Leaderboard entries={leaderboard} currentId={currentScoreId} onClear={onClearLeaderboard} categoryLabel={categoryLabel} />
         </div>
       );
     }
@@ -374,6 +689,45 @@
       const [gameMode, setGameMode] = useState("word");
       const gameModeRef = useRef("word");
       useEffect(() => { gameModeRef.current = gameMode; }, [gameMode]);
+      const [playerName, setPlayerName] = useState(() => localStorage.getItem('typoit_name') || '');
+      const [allBoards, setAllBoards] = useState(() => {
+        try { return JSON.parse(localStorage.getItem('typoit_lbs') || '{}'); } catch { return {}; }
+      });
+      const [currentScoreId, setCurrentScoreId] = useState(null);
+      const [activeCategory, setActiveCategory] = useState('word-0');
+      const wordLengthRef = useRef(0);
+      useEffect(() => { wordLengthRef.current = wordLength; }, [wordLength]);
+
+      function getLbKey(mode, wl) {
+        return mode === 'sentence' ? 'sentence' : 'word-' + wl;
+      }
+      function getCategoryLabel(key) {
+        if (key === 'sentence') return 'Sentence Mode';
+        const len = key.split('-')[1];
+        return len === '0' ? 'Word Mode (Any)' : 'Word Mode (' + len + ' letters)';
+      }
+
+      const leaderboard = allBoards[activeCategory] || [];
+      const [musicOn, setMusicOn] = useState(true);
+      const musicStartedRef = useRef(false);
+
+      // Auto-start music on first user interaction (not the mute button)
+      useEffect(() => {
+        if (!musicOn || musicStartedRef.current) return;
+        const tryStart = (e) => {
+          if (e.target.closest && e.target.closest('.music-toggle')) return;
+          if (!MusicEngine.isPlaying()) MusicEngine.start();
+          musicStartedRef.current = true;
+          document.removeEventListener('click', tryStart);
+          document.removeEventListener('keydown', tryStart);
+        };
+        document.addEventListener('click', tryStart);
+        document.addEventListener('keydown', tryStart);
+        return () => {
+          document.removeEventListener('click', tryStart);
+          document.removeEventListener('keydown', tryStart);
+        };
+      }, [musicOn]);
 
       useEffect(() => {
         const root = document.getElementById("root");
@@ -457,12 +811,37 @@
         setTimeout(() => { if (inputRef.current) { inputRef.current.value = ""; inputRef.current.focus(); } }, 10);
       }, [pickWord, resetWordTimer]);
 
-      const endGame = useCallback(() => {
+      const endGame = useCallback((timerExpired) => {
         stopWordTimer();
         stopGlobalTimer();
         gameEndedRef.current = true;
+        MusicEngine.stop();
+
+        // Only save score to leaderboard if the full minute was played
+        const count = logRef.current.length;
+        if (count > 0 && timerExpired) {
+          const sum = logRef.current.reduce((a, e) => a + e.time, 0);
+          const isSentence = gameModeRef.current === "sentence";
+          const wordCount = isSentence ? count * 4 : count;
+          const wpm = (wordCount / (sum / 60)).toFixed(1);
+          const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+          const entry = { id, name: playerName.trim() || 'Anon', wpm: parseFloat(wpm), count, date: new Date().toLocaleDateString() };
+          const key = getLbKey(gameModeRef.current, wordLengthRef.current);
+          setActiveCategory(key);
+          setAllBoards(prev => {
+            const board = [...(prev[key] || []), entry].sort((a, b) => b.wpm - a.wpm).slice(0, 10);
+            const updated = { ...prev, [key]: board };
+            localStorage.setItem('typoit_lbs', JSON.stringify(updated));
+            return updated;
+          });
+          setCurrentScoreId(id);
+        }
+
         setScreen("results");
-      }, [stopWordTimer, stopGlobalTimer]);
+      }, [stopWordTimer, stopGlobalTimer, playerName]);
+
+      const endGameRef = useRef(endGame);
+      useEffect(() => { endGameRef.current = endGame; }, [endGame]);
 
       const startGame = useCallback(() => {
         setLives(MAX_LIVES); livesRef.current = MAX_LIVES;
@@ -477,10 +856,7 @@
             // use a timeout so endGame ref is current
             setTimeout(() => {
               if (!gameEndedRef.current) {
-                gameEndedRef.current = true;
-                stopWordTimer();
-                stopGlobalTimer();
-                setScreen("results");
+                endGameRef.current(true);
               }
             }, 0);
           } else {
@@ -488,6 +864,7 @@
           }
         }, 47);
         setScreen("game");
+        if (musicOn) { MusicEngine.start(); }
         setTimeout(() => nextWord(), 0);
       }, [nextWord, stopWordTimer, stopGlobalTimer]);
 
@@ -504,12 +881,13 @@
 
       const handleWrongKey = useCallback(() => {
         setExploding(true);
+        MusicEngine.slowDown();
         const newLives = livesRef.current - 1;
         setLives(newLives); livesRef.current = newLives;
         lockedRef.current = true;
         if (newLives <= 0) {
           setFeedback({ text: "No lives left!", type: "incorrect" });
-          setTimeout(() => endGame(), 1000);
+          setTimeout(() => endGame(false), 1000);
           return;
         }
         setFeedback({ text: "Wrong key! Lost a life.", type: "incorrect" });
@@ -531,8 +909,17 @@
 
       return (
         <>
+          <button
+            className={"music-toggle" + (musicOn ? " playing" : "")}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (musicOn) { MusicEngine.stop(); setMusicOn(false); }
+              else { MusicEngine.start(); musicStartedRef.current = true; setMusicOn(true); }
+            }}
+            title={musicOn ? "Mute music" : "Play music"}
+          >{musicOn ? "\u266B" : "\u266A"}</button>
           <HUD lives={lives} countdownMs={countdownMs} visible={screen === "game"} />
-          {screen === "welcome" && <Welcome onStart={startGame} wordLength={wordLength} setWordLength={setWordLength} gameMode={gameMode} setGameMode={setGameMode} />}
+          {screen === "welcome" && <Welcome onStart={startGame} wordLength={wordLength} setWordLength={setWordLength} gameMode={gameMode} setGameMode={setGameMode} playerName={playerName} setPlayerName={(n) => { setPlayerName(n); localStorage.setItem('typoit_name', n); }} />}
           {screen === "game" && (
             <div className="game" onClick={focusInput}>
               <h1>Typo.it</h1>
@@ -554,7 +941,7 @@
               <div className="time-display">{lastTime}</div>
             </div>
           )}
-          {screen === "results" && <Results log={log} onReplay={startGame} gameMode={gameMode} />}
+          {screen === "results" && <Results log={log} onReplay={() => setScreen("welcome")} gameMode={gameMode} playerName={playerName} leaderboard={leaderboard} currentScoreId={currentScoreId} categoryLabel={getCategoryLabel(activeCategory)} onClearLeaderboard={() => { setAllBoards(prev => { const updated = { ...prev }; delete updated[activeCategory]; localStorage.setItem('typoit_lbs', JSON.stringify(updated)); return updated; }); }} />}
           {(screen === "game" || screen === "results") && <div className="log-wrap"><WordLog log={log} /></div>}
         </>
       );
