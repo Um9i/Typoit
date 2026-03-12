@@ -613,7 +613,7 @@
       );
     }
 
-    function Leaderboard({ entries, currentId, onClear, categoryLabel }) {
+    function Leaderboard({ entries, currentId, categoryLabel }) {
       if (entries.length === 0) return null;
       return (
         <div className="leaderboard">
@@ -628,12 +628,11 @@
               ))}
             </tbody>
           </table>
-          <button className="lb-clear" onClick={onClear}>Clear Leaderboard</button>
         </div>
       );
     }
 
-    function Results({ log, onReplay, gameMode, playerName, leaderboard, currentScoreId, onClearLeaderboard, categoryLabel }) {
+    function Results({ log, onReplay, gameMode, playerName, leaderboard, currentScoreId, categoryLabel }) {
       const count = log.length;
       const isSentence = gameMode === "sentence";
       let avgTimeStr = "N/A", wpmStr = "N/A";
@@ -651,7 +650,7 @@
           <p className="stat">Average time per {isSentence ? "sentence" : "word"}: <span>{avgTimeStr}s</span></p>
           <p className="stat">Words per minute: <span>{wpmStr}</span></p>
           <button className="btn" onClick={onReplay}>Play Again</button>
-          <Leaderboard entries={leaderboard} currentId={currentScoreId} onClear={onClearLeaderboard} categoryLabel={categoryLabel} />
+          <Leaderboard entries={leaderboard} currentId={currentScoreId} categoryLabel={categoryLabel} />
         </div>
       );
     }
@@ -941,7 +940,7 @@
               <div className="time-display">{lastTime}</div>
             </div>
           )}
-          {screen === "results" && <Results log={log} onReplay={() => setScreen("welcome")} gameMode={gameMode} playerName={playerName} leaderboard={leaderboard} currentScoreId={currentScoreId} categoryLabel={getCategoryLabel(activeCategory)} onClearLeaderboard={() => { setAllBoards(prev => { const updated = { ...prev }; delete updated[activeCategory]; localStorage.setItem('typoit_lbs', JSON.stringify(updated)); return updated; }); }} />}
+          {screen === "results" && <Results log={log} onReplay={() => setScreen("welcome")} gameMode={gameMode} playerName={playerName} leaderboard={leaderboard} currentScoreId={currentScoreId} categoryLabel={getCategoryLabel(activeCategory)} />}
           {(screen === "game" || screen === "results") && <div className="log-wrap"><WordLog log={log} /></div>}
         </>
       );
