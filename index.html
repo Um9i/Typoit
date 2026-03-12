@@ -370,36 +370,81 @@
         C6:1046.50,D6:1174.66,Eb6:1244.51,E6:1318.51
       };
 
-      // Intense minor arpeggios — Am, Dm, Em, Am (octave run)
-      const arpA = ['A4','C5','E5','A5','C6','A5','E5','C5'];
-      const arpB = ['D4','F4','A4','D5','F5','D5','A4','F4'];
-      const arpC = ['E4','G4','B4','E5','G5','E5','B4','G4'];
-      const arpD = ['A4','E5','A5','E5','C5','A4','E4','A4'];
-      const arpSeq = [...arpA, ...arpB, ...arpC, ...arpD];
+      // ---- SONG STRUCTURE ----
+      // intro(32) -> verse(64) -> prechorus(32) -> chorus(64) -> verse2(64) -> bridge(48) -> solo(64) -> chorus2(64) -> outro(32)
+      const SECTIONS = [
+        { name: 'intro',      len: 32  },
+        { name: 'verse',      len: 64  },
+        { name: 'prechorus',  len: 32  },
+        { name: 'chorus',     len: 64  },
+        { name: 'verse2',     len: 64  },
+        { name: 'bridge',     len: 48  },
+        { name: 'solo',       len: 64  },
+        { name: 'chorus2',    len: 64  },
+        { name: 'outro',      len: 32  },
+      ];
+      const TOTAL = SECTIONS.reduce((s, x) => s + x.len, 0);   // 464
+      const INTRO_LEN = SECTIONS[0].len;                        // 32
 
-      // Counter-melody (syncopated, high register)
-      const arp2A = ['E5','0','A5','0','C6','0','A5','E5'];
-      const arp2B = ['D5','0','F5','0','A5','0','F5','D5'];
-      const arp2C = ['E5','0','G5','0','B5','0','G5','E5'];
-      const arp2D = ['A5','0','C6','0','E6','0','C6','A5'];
-      const arp2Seq = [...arp2A, ...arp2B, ...arp2C, ...arp2D];
+      function getSection(g) {
+        const s = g < TOTAL ? g : INTRO_LEN + ((g - TOTAL) % (TOTAL - INTRO_LEN));
+        let acc = 0;
+        for (const sec of SECTIONS) {
+          if (s < acc + sec.len) return { name: sec.name, pos: s - acc, len: sec.len };
+          acc += sec.len;
+        }
+        return { name: 'verse', pos: 0, len: 64 };
+      }
 
-      // Lead melody — dramatic rising and falling phrases
-      const lead = ['A5','C6','E6','C6','A5','E5','A5','0',
-                    'D5','F5','A5','F5','D5','A4','D5','0',
-                    'E5','G5','B5','G5','E5','B4','E5','0',
-                    'A5','E5','C5','E5','A5','C6','E6','A5'];
+      // ---- ARPEGGIO PATTERNS (32-step, looped) ----
+      const arpVerse   = ['A4','C5','E5','A5','E5','C5','A4','C5','D4','F4','A4','D5','A4','F4','D4','F4',
+                        'E4','G4','B4','E5','B4','G4','E4','G4','A4','C5','E5','C5','A4','E4','A4','C5'];
+      const arpChorus  = ['A4','C5','E5','A5','C6','A5','E5','C5','D4','F4','A4','D5','F5','D5','A4','F4',
+                        'E4','G4','B4','E5','G5','E5','B4','G4','A4','E5','A5','E5','C6','A5','E5','A4'];
+      const arpBridge  = ['F4','A4','C5','F5','C5','A4','F4','A4','G4','B4','D5','G5','D5','B4','G4','B4',
+                        'A4','C5','E5','A5','E5','C5','A4','C5','E4','G4','B4','E5','B4','G4','E4','G4'];
+      const arpSolo    = ['A4','E5','A5','E6','A5','E5','A4','E4','D4','A4','D5','A5','D5','A4','D4','A4',
+                        'E4','B4','E5','B5','E5','B4','E4','B4','A4','C5','E5','A5','C6','E6','C6','A5'];
+      const arpIntro   = ['A4','0','E5','0','A5','0','E5','0','A4','0','C5','0','E5','0','C5','0',
+                        'D4','0','A4','0','D5','0','A4','0','E4','0','B4','0','E5','0','B4','0'];
 
-      // Heavy bass with movement
-      const bassLine = ['A2','A2','A2','C3','D2','D2','D3','D2',
-                        'E2','E2','E2','G2','A2','A2','E2','A2'];
+      // ---- COUNTER-MELODIES (32-step) ----
+      const ctrVerse   = ['0','0','A5','0','0','0','E5','0','0','0','F5','0','0','0','D5','0',
+                        '0','0','G5','0','0','0','E5','0','0','0','C6','0','0','0','A5','0'];
+      const ctrChorus  = ['A5','C6','0','E6','0','C6','A5','0','F5','A5','0','D6','0','A5','F5','0',
+                        'G5','B5','0','E6','0','B5','G5','0','A5','E6','0','A5','E5','A5','C6','0'];
+      const ctrBridge  = ['C5','0','F5','0','A5','0','0','0','D5','0','G5','0','B5','0','0','0',
+                        'C5','0','E5','0','A5','0','0','0','B4','0','E5','0','G5','0','0','0'];
 
-      // Aggressive drum patterns
-      const kickPat =  [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,1,1,0];
-      const snarePat = [0,0,0,0, 1,0,0,1, 0,0,0,0, 1,0,1,1];
-      const hihatPat = [1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1];
-      const crashPat = [1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0];
+      // ---- LEAD MELODIES (16-step, played every 2nd step) ----
+      const leadVerse    = ['A5','0','C6','0','E5','0','A5','0','D5','0','F5','0','D5','0','0','0'];
+      const leadChorus   = ['A5','C6','E6','C6','A5','E5','A5','C6','D5','F5','A5','F5','D5','A5','E6','A5'];
+      const leadBridge   = ['F5','0','A5','0','C6','0','F5','0','G5','0','B5','0','D6','0','B5','0'];
+      const leadSolo     = ['A5','B5','C6','D6','E6','D6','C6','B5','A5','G5','F5','E5','D5','E5','F5','G5'];
+      const leadSolo2    = ['A5','C6','E6','C6','A5','E5','A4','E5','A5','Bb5','A5','G5','F5','E5','D5','C5'];
+      const leadPre      = ['E5','0','E5','0','A5','0','A5','B5','C6','0','C6','0','B5','0','A5','0'];
 
+      // ---- BASS LINES (16-step, played every 2nd step) ----
+      const bassVerse    = ['A2','A2','A2','0','D2','D2','D2','0','E2','E2','E2','0','A2','A2','E2','A2'];
+      const bassChorus   = ['A2','A2','A2','C3','D2','D2','D3','D2','E2','E2','E2','G2','A2','A2','E2','A2'];
+      const bassBridge   = ['F2','F2','F2','A2','G2','G2','G2','B2','A2','A2','A2','C3','E2','E2','E2','G2'];
+      const bassSolo     = ['A2','A2','E2','A2','D2','D2','A2','D2','E2','E2','B2','E2','A2','C3','E2','A2'];
+
+      // ---- DRUM PATTERNS (16-step) ----
+      const kickNone     = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+      const kickLight    = [1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0];
+      const kickMed      = [1,0,0,0,1,0,1,0,1,0,0,0,1,0,1,0];
+      const kickFull     = [1,0,1,0,1,0,1,0,1,0,1,0,1,1,1,0];
+      const kickBridge   = [1,0,0,0,0,0,1,0,1,0,0,0,0,0,1,0];
+      const snareNone    = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+      const snareLight   = [0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0];
+      const snareFull    = [0,0,0,0,1,0,0,1,0,0,0,0,1,0,1,1];
+      const snareBridge  = [0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,1];
+      const hihatNone    = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+      const hihatSparse  = [1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0];
+      const hihatFull    = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];
+
+      // ---- SOUND GENERATORS ----
       function osc(freq, dur, type, vol, time, detune) {
         const o = ctx.createOscillator();
         const g = ctx.createGain();
@@ -438,7 +483,6 @@
         g.gain.exponentialRampToValueAtTime(0.001, time + 0.18);
         o.connect(g); g.connect(gainNode);
         o.start(time); o.stop(time + 0.18);
-        // Click layer
         noise(0.015, 0.08, time);
       }
 
@@ -451,62 +495,145 @@
         noise(0.3, 0.08, time);
       }
 
+      // ---- STEP SCHEDULER ----
       function scheduleStep(t) {
-        const s = step;
-        const s16 = s % 16;
-        const s32 = s % 32;
-        const s64 = s % 64;
-        const section = (s / 64 | 0) % 2; // alternate sections for variety
+        const sec = getSection(step);
+        const { name, pos, len } = sec;
+        const s16 = pos % 16;
+        const s32 = pos % 32;
 
-        // Arpeggios — fast pulsing squares (always on)
-        const arpNote = arpSeq[s32];
-        if (arpNote !== '0' && NOTE[arpNote]) {
-          osc(NOTE[arpNote], stepDur * 0.5, 'square', 0.05, t, 0);
-          osc(NOTE[arpNote], stepDur * 0.5, 'square', 0.035, t, 10);
-          // Sub-octave pulse for thickness
-          osc(NOTE[arpNote] / 2, stepDur * 0.5, 'square', 0.02, t, 0);
+        // Section-specific configuration
+        let arp = null, ctr = null, ld = null, bass = null;
+        let kk = kickNone, sn = snareNone, hh = hihatNone;
+        let arpVol = 0.05, ldVol = 0.05, bassVol = 0.12;
+        let useArp = true, useCtr = false, useLead = false, useBass = false, useDrums = false;
+        let doCrash = false, doFill = false;
+
+        switch (name) {
+          case 'intro':
+            arp = arpIntro;
+            arpVol = 0.02 + (pos / len) * 0.04;        // fade in
+            hh = hihatSparse;
+            kk = kickLight;
+            useDrums = pos >= 16;                        // drums enter halfway
+            break;
+
+          case 'verse':
+            arp = arpVerse; ld = leadVerse; bass = bassVerse;
+            kk = kickLight; sn = snareLight; hh = hihatFull;
+            useDrums = true; useBass = true; useLead = true;
+            doCrash = pos === 0;
+            break;
+
+          case 'prechorus':
+            arp = arpVerse; ld = leadPre; bass = bassVerse; ctr = ctrVerse;
+            kk = kickMed; sn = snareLight; hh = hihatFull;
+            useDrums = true; useBass = true; useLead = true; useCtr = true;
+            arpVol = 0.04 + (pos / len) * 0.03;         // build intensity
+            ldVol = 0.04 + (pos / len) * 0.03;
+            // snare roll in last 4 steps
+            if (pos >= len - 4) { sn = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]; }
+            break;
+
+          case 'chorus':
+          case 'chorus2':
+            arp = arpChorus; ld = leadChorus; bass = bassChorus; ctr = ctrChorus;
+            kk = kickFull; sn = snareFull; hh = hihatFull;
+            useDrums = true; useBass = true; useLead = true; useCtr = true;
+            doCrash = pos === 0;
+            doFill = true;
+            ldVol = 0.06;
+            break;
+
+          case 'verse2':
+            arp = arpVerse; ld = leadVerse; bass = bassVerse; ctr = ctrVerse;
+            kk = kickLight; sn = snareLight; hh = hihatFull;
+            useDrums = true; useBass = true; useLead = true; useCtr = true;
+            break;
+
+          case 'bridge':
+            arp = arpBridge; ld = leadBridge; bass = bassBridge; ctr = ctrBridge;
+            kk = kickBridge; sn = snareBridge; hh = hihatSparse;
+            useDrums = true; useBass = true; useLead = true; useCtr = pos >= 24;
+            arpVol = 0.04; ldVol = 0.04; bassVol = 0.09;
+            doCrash = pos === 0;
+            break;
+
+          case 'solo':
+            arp = arpSolo;
+            ld = pos < 32 ? leadSolo : leadSolo2;       // two solo phrases
+            bass = bassSolo; ctr = ctrChorus;
+            kk = kickFull; sn = snareFull; hh = hihatFull;
+            useDrums = true; useBass = true; useLead = true; useCtr = true;
+            ldVol = 0.07;
+            doFill = true;
+            doCrash = pos === 0 || pos === 32;
+            break;
+
+          case 'outro':
+            arp = arpIntro; bass = bassVerse;
+            kk = kickLight; sn = snareNone; hh = hihatSparse;
+            useDrums = pos < 24;
+            useBass = pos < 16;
+            arpVol = 0.05 * Math.max(0, 1 - pos / len);  // fade out
+            break;
         }
 
-        // Counter-melody (second section only, sawtooth shimmer)
-        if (section === 1) {
-          const arp2Note = arp2Seq[s32];
-          if (arp2Note !== '0' && NOTE[arp2Note]) {
-            osc(NOTE[arp2Note], stepDur * 0.4, 'sawtooth', 0.025, t, 5);
+        // ---- RENDER LAYERS ----
+
+        // Arpeggios
+        if (useArp && arp) {
+          const n = arp[s32 % arp.length];
+          if (n !== '0' && NOTE[n]) {
+            osc(NOTE[n], stepDur * 0.5, 'square', arpVol, t, 0);
+            osc(NOTE[n], stepDur * 0.5, 'square', arpVol * 0.7, t, 10);
+            if (name === 'chorus' || name === 'chorus2' || name === 'solo') {
+              osc(NOTE[n] / 2, stepDur * 0.5, 'square', arpVol * 0.4, t, 0);
+            }
           }
         }
 
-        // Lead melody every 2nd step
-        if (s % 2 === 0) {
-          const leadNote = lead[(s / 2 | 0) % lead.length];
-          if (leadNote !== '0' && NOTE[leadNote]) {
-            osc(NOTE[leadNote], stepDur * 1.8, 'sawtooth', 0.05, t, 0);
-            osc(NOTE[leadNote] * 1.003, stepDur * 1.8, 'sawtooth', 0.035, t, 0);
-            // Octave below for weight
-            osc(NOTE[leadNote] / 2, stepDur * 1.4, 'square', 0.02, t, 0);
+        // Counter-melody
+        if (useCtr && ctr) {
+          const n = ctr[s32 % ctr.length];
+          if (n !== '0' && NOTE[n]) {
+            osc(NOTE[n], stepDur * 0.4, 'sawtooth', 0.025, t, 5);
           }
         }
 
-        // Bass every 2 steps — heavier
-        if (s % 2 === 0) {
-          const bassNote = bassLine[(s / 2 | 0) % bassLine.length];
-          if (NOTE[bassNote]) {
-            osc(NOTE[bassNote], stepDur * 3, 'sawtooth', 0.12, t, 0);
-            osc(NOTE[bassNote], stepDur * 3, 'square', 0.06, t, 0);
-            // Sub bass
-            osc(NOTE[bassNote] / 2, stepDur * 3.5, 'sine', 0.1, t, 0);
+        // Lead (every 2nd step)
+        if (useLead && ld && pos % 2 === 0) {
+          const n = ld[(pos / 2 | 0) % ld.length];
+          if (n !== '0' && NOTE[n]) {
+            osc(NOTE[n], stepDur * 1.8, 'sawtooth', ldVol, t, 0);
+            osc(NOTE[n] * 1.003, stepDur * 1.8, 'sawtooth', ldVol * 0.7, t, 0);
+            if (name !== 'bridge') {
+              osc(NOTE[n] / 2, stepDur * 1.4, 'square', ldVol * 0.4, t, 0);
+            }
+          }
+        }
+
+        // Bass (every 2nd step)
+        if (useBass && bass && pos % 2 === 0) {
+          const n = bass[(pos / 2 | 0) % bass.length];
+          if (n !== '0' && NOTE[n]) {
+            osc(NOTE[n], stepDur * 3, 'sawtooth', bassVol, t, 0);
+            osc(NOTE[n], stepDur * 3, 'square', bassVol * 0.5, t, 0);
+            osc(NOTE[n] / 2, stepDur * 3.5, 'sine', bassVol * 0.85, t, 0);
           }
         }
 
         // Drums
-        if (kickPat[s16]) kick(t);
-        if (snarePat[s16]) snare(t);
-        if (hihatPat[s16]) noise(0.03, 0.05, t);
-        if (s64 === 0 && crashPat[0]) crash(t);
-
-        // Drum fill every 64 steps (end of 4-bar phrase)
-        if (s64 >= 60) {
-          if (s16 % 2 === 0) snare(t);
-          if (s64 === 63) kick(t);
+        if (useDrums) {
+          if (kk[s16]) kick(t);
+          if (sn[s16]) snare(t);
+          if (hh[s16]) noise(0.03, 0.05, t);
+          if (doCrash && pos === (pos === 32 && name === 'solo' ? 32 : 0)) crash(t);
+          // Drum fill at end of long sections
+          if (doFill && len >= 64 && pos >= len - 4) {
+            if (s16 % 2 === 0) snare(t);
+            if (pos === len - 1) kick(t);
+          }
         }
 
         step++;
@@ -863,7 +990,7 @@
           }
         }, 47);
         setScreen("game");
-        if (musicOn) { MusicEngine.start(); }
+        if (musicOn) { MusicEngine.stop(); MusicEngine.start(); }
         setTimeout(() => nextWord(), 0);
       }, [nextWord, stopWordTimer, stopGlobalTimer]);
 
