@@ -111,6 +111,34 @@
     .welcome p { font-size: 1.1rem; line-height: 1.7; margin-bottom: 0.6rem; color: #aaa; }
     .welcome .btn { margin-top: 1.5rem; }
 
+    .length-select {
+      margin-top: 1.2rem;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+    .length-select label {
+      font-size: 0.95rem;
+      color: #aaa;
+      margin-bottom: 4px;
+      width: 100%;
+    }
+    .len-btn {
+      background: #1a1a2e;
+      color: #bbb;
+      border: 2px solid #333;
+      padding: 8px 14px;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+      min-width: 44px;
+    }
+    .len-btn:hover { border-color: #4ecca3; color: #fff; }
+    .len-btn.active { background: #4ecca3; color: #0f0f1a; border-color: #4ecca3; }
+
     /* ---- Game ---- */
     .game { text-align: center; animation: fadeIn 0.35s ease; width: 90%; max-width: 520px; cursor: text; }
     .game h1 { font-size: 2rem; color: #e94560; margin-bottom: 1.5rem; }
@@ -242,13 +270,24 @@
       );
     }
 
-    function Welcome({ onStart }) {
+    function Welcome({ onStart, wordLength, setWordLength }) {
+      const lengths = [0, 4, 5, 6, 7, 8, 9, 10];
       return (
         <div className="welcome">
           <h1>Typo.it</h1>
           <div className="subtitle">Keyboard Training</div>
           <p>Type the word shown as fast as you can.</p>
           <p>Miss a letter and you lose a life — 3 lives total.</p>
+          <div className="length-select">
+            <label>Word length:</label>
+            {lengths.map(n => (
+              <button
+                key={n}
+                className={"len-btn" + (wordLength === n ? " active" : "")}
+                onClick={() => setWordLength(n)}
+              >{n === 0 ? "Any" : n}</button>
+            ))}
+          </div>
           <button className="btn" onClick={onStart}>Play</button>
         </div>
       );
@@ -302,6 +341,7 @@
       const [wordTimerMs, setWordTimerMs] = useState(0);
       const [countdownMs, setCountdownMs] = useState(GAME_DURATION);
       const [exploding, setExploding] = useState(false);
+      const [wordLength, setWordLength] = useState(0);
 
       useEffect(() => {
         const root = document.getElementById("root");
@@ -335,8 +375,10 @@
 
       const pickWord = useCallback(() => {
         if (wordlist.length === 0) return "";
-        return wordlist[Math.floor(Math.random() * wordlist.length)];
-      }, [wordlist]);
+        const pool = wordLength > 0 ? wordlist.filter(w => w.length === wordLength) : wordlist;
+        if (pool.length === 0) return wordlist[Math.floor(Math.random() * wordlist.length)];
+        return pool[Math.floor(Math.random() * pool.length)];
+      }, [wordlist, wordLength]);
 
       const stopWordTimer = useCallback(() => {
         timerRunningRef.current = false;
@@ -452,7 +494,7 @@
       return (
         <>
           <HUD lives={lives} countdownMs={countdownMs} visible={screen === "game"} />
-          {screen === "welcome" && <Welcome onStart={startGame} />}
+          {screen === "welcome" && <Welcome onStart={startGame} wordLength={wordLength} setWordLength={setWordLength} />}
           {screen === "game" && (
             <div className="game" onClick={focusInput}>
               <h1>Typo.it</h1>
