@@ -139,6 +139,20 @@
     .len-btn:hover { border-color: #4ecca3; color: #fff; }
     .len-btn.active { background: #4ecca3; color: #0f0f1a; border-color: #4ecca3; }
 
+    .mode-select {
+      margin-top: 1.5rem;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+    .mode-select label {
+      font-size: 0.95rem;
+      color: #aaa;
+      margin-bottom: 4px;
+      width: 100%;
+      text-align: center;
+    }
+
     /* ---- Game ---- */
     .game { text-align: center; animation: fadeIn 0.35s ease; width: 90%; max-width: 520px; cursor: text; }
     .game h1 { font-size: 2rem; color: #e94560; margin-bottom: 1.5rem; }
@@ -150,6 +164,11 @@
       min-height: 4rem;
       margin-bottom: 1.5rem;
       text-shadow: 0 0 12px rgba(255, 255, 255, 0.1);
+    }
+    .word-display.sentence {
+      font-size: 1.8rem;
+      letter-spacing: 0.06em;
+      word-spacing: 0.3em;
     }
     .word-input {
       width: 75%;
@@ -270,7 +289,7 @@
       );
     }
 
-    function Welcome({ onStart, wordLength, setWordLength }) {
+    function Welcome({ onStart, wordLength, setWordLength, gameMode, setGameMode }) {
       const lengths = [0, 4, 5, 6, 7, 8, 9, 10];
       return (
         <div className="welcome">
@@ -278,34 +297,44 @@
           <div className="subtitle">Keyboard Training</div>
           <p>Type the word shown as fast as you can.</p>
           <p>Miss a letter and you lose a life — 3 lives total.</p>
-          <div className="length-select">
-            <label>Word length:</label>
-            {lengths.map(n => (
-              <button
-                key={n}
-                className={"len-btn" + (wordLength === n ? " active" : "")}
-                onClick={() => setWordLength(n)}
-              >{n === 0 ? "Any" : n}</button>
-            ))}
+          <div className="mode-select">
+            <label>Mode:</label>
+            <button className={"len-btn" + (gameMode === "word" ? " active" : "")} onClick={() => setGameMode("word")}>Word</button>
+            <button className={"len-btn" + (gameMode === "sentence" ? " active" : "")} onClick={() => setGameMode("sentence")}>Sentence</button>
           </div>
+          {gameMode === "word" && (
+            <div className="length-select">
+              <label>Word length:</label>
+              {lengths.map(n => (
+                <button
+                  key={n}
+                  className={"len-btn" + (wordLength === n ? " active" : "")}
+                  onClick={() => setWordLength(n)}
+                >{n === 0 ? "Any" : n}</button>
+              ))}
+            </div>
+          )}
           <button className="btn" onClick={onStart}>Play</button>
         </div>
       );
     }
 
-    function Results({ log, onReplay }) {
+    function Results({ log, onReplay, gameMode }) {
       const count = log.length;
+      const isSentence = gameMode === "sentence";
       let avgTimeStr = "N/A", wpmStr = "N/A";
       if (count > 0) {
         const sum = log.reduce((a, e) => a + e.time, 0);
         avgTimeStr = (sum / count).toFixed(2);
-        wpmStr = (count / (sum / 60)).toFixed(1);
+        const wordCount = isSentence ? count * 4 : count;
+        wpmStr = (wordCount / (sum / 60)).toFixed(1);
       }
+      const label = isSentence ? "Sentences" : "Words";
       return (
         <div className="results">
           <h2>Game Over</h2>
-          <p className="stat">Words typed correctly: <span>{count}</span></p>
-          <p className="stat">Average time per word: <span>{avgTimeStr}s</span></p>
+          <p className="stat">{label} typed correctly: <span>{count}</span></p>
+          <p className="stat">Average time per {isSentence ? "sentence" : "word"}: <span>{avgTimeStr}s</span></p>
           <p className="stat">Words per minute: <span>{wpmStr}</span></p>
           <button className="btn" onClick={onReplay}>Play Again</button>
         </div>
@@ -342,6 +371,9 @@
       const [countdownMs, setCountdownMs] = useState(GAME_DURATION);
       const [exploding, setExploding] = useState(false);
       const [wordLength, setWordLength] = useState(0);
+      const [gameMode, setGameMode] = useState("word");
+      const gameModeRef = useRef("word");
+      useEffect(() => { gameModeRef.current = gameMode; }, [gameMode]);
 
       useEffect(() => {
         const root = document.getElementById("root");
@@ -375,10 +407,16 @@
 
       const pickWord = useCallback(() => {
         if (wordlist.length === 0) return "";
+        const pick = (pool) => pool[Math.floor(Math.random() * pool.length)];
+        if (gameModeRef.current === "sentence") {
+          const words = [];
+          for (let i = 0; i < 4; i++) words.push(pick(wordlist));
+          return words.join(" ");
+        }
         const pool = wordLength > 0 ? wordlist.filter(w => w.length === wordLength) : wordlist;
-        if (pool.length === 0) return wordlist[Math.floor(Math.random() * wordlist.length)];
-        return pool[Math.floor(Math.random() * pool.length)];
-      }, [wordlist, wordLength]);
+        if (pool.length === 0) return pick(wordlist);
+        return pick(pool);
+      }, [wordlist, wordLength, gameMode]);
 
       const stopWordTimer = useCallback(() => {
         timerRunningRef.current = false;
@@ -494,11 +532,11 @@
       return (
         <>
           <HUD lives={lives} countdownMs={countdownMs} visible={screen === "game"} />
-          {screen === "welcome" && <Welcome onStart={startGame} wordLength={wordLength} setWordLength={setWordLength} />}
+          {screen === "welcome" && <Welcome onStart={startGame} wordLength={wordLength} setWordLength={setWordLength} gameMode={gameMode} setGameMode={setGameMode} />}
           {screen === "game" && (
             <div className="game" onClick={focusInput}>
               <h1>Typo.it</h1>
-              <div className="word-display">{currentWord}</div>
+              <div className={"word-display" + (gameMode === "sentence" ? " sentence" : "")}>{currentWord}</div>
               <input
                 ref={inputRef}
                 className={"word-input" + (exploding ? " explode" : "")}
@@ -506,7 +544,7 @@
                 inputMode="text"
                 autoComplete="off"
                 autoFocus
-                placeholder="Type the word…"
+                placeholder={gameMode === "sentence" ? "Type the sentence…" : "Type the word…"}
                 onInput={handleInput}
                 onAnimationEnd={() => setExploding(false)}
                 onBlur={() => { setTimeout(focusInput, 10); }}
@@ -516,7 +554,7 @@
               <div className="time-display">{lastTime}</div>
             </div>
           )}
-          {screen === "results" && <Results log={log} onReplay={startGame} />}
+          {screen === "results" && <Results log={log} onReplay={startGame} gameMode={gameMode} />}
           {(screen === "game" || screen === "results") && <div className="log-wrap"><WordLog log={log} /></div>}
         </>
       );
