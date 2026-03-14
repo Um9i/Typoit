@@ -361,10 +361,12 @@
       let nextNoteTime = 0;
       let step = 0;
 
-      const BPM = 185;
-      const NORMAL_STEP = 60 / BPM / 2;
-      let stepDur = NORMAL_STEP;
+      const START_BPM = 150;
+      const END_BPM = 260;
+      const MUSIC_DURATION = 60;
+      let stepDur = 60 / START_BPM / 2;
       let resumeTimer = null;
+      let gameStartCtxTime = 0;
 
       const N = {};
       'C Db D Eb E F Gb G Ab A Bb B'.split(' ').forEach((name, i) => {
@@ -785,6 +787,10 @@
 
       function scheduler() {
         while (nextNoteTime < ctx.currentTime + 0.1) {
+          const elapsed = Math.min(nextNoteTime - gameStartCtxTime, MUSIC_DURATION);
+          const progress = Math.max(0, Math.min(elapsed / MUSIC_DURATION, 1));
+          const currentBPM = START_BPM + (END_BPM - START_BPM) * progress;
+          stepDur = 60 / currentBPM / 2;
           scheduleStep(nextNoteTime);
           nextNoteTime += stepDur;
         }
@@ -807,6 +813,7 @@
           gainNode.connect(compressor);
           compressor.connect(ctx.destination);
           step = 0;
+          gameStartCtxTime = ctx.currentTime;
           nextNoteTime = ctx.currentTime;
           schedulerTimer = setInterval(scheduler, 25);
           playing = true;
@@ -864,7 +871,6 @@
           resumeTimer = setTimeout(() => {
             if (!playing) return;
             gainNode.gain.setValueAtTime(0.45, ctx.currentTime);
-            stepDur = NORMAL_STEP;
             nextNoteTime = ctx.currentTime;
             schedulerTimer = setInterval(scheduler, 25);
             resumeTimer = null;
