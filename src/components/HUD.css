@@ -1,0 +1,46 @@
+.hud {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.8rem;
+  pointer-events: none;
+  z-index: 10;
+}
+.countdown {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 1.5rem;
+  color: #4ecca3;
+  text-shadow: 0 0 8px rgba(78, 204, 163, 0.4);
+  transition: color 0.3s;
+}
+.countdown.urgent {
+  color: #e94560;
+  text-shadow: 0 0 12px rgba(233, 69, 96, 0.5);
+}
+.hearts { font-size: 1.8rem; letter-spacing: 0.35em; user-select: none; }
+.hearts span { transition: opacity 0.3s, transform 0.3s; display: inline-block; }
+.hearts .alive { color: #e94560; filter: drop-shadow(0 0 4px rgba(233, 69, 96, 0.6)); }
+.hearts .dead  { color: #e94560; opacity: 0.15; transform: scale(0.85); }
+
+.music-toggle {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  background: #1a1a2e;
+  border: 2px solid #333;
+  color: #bbb;
+  font-size: 1.4rem;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s, color 0.2s;
+}
+.music-toggle:hover { border-color: #4ecca3; color: #fff; }
+.music-toggle.playing { border-color: #4ecca3; color: #4ecca3; }

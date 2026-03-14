@@ -1,0 +1,84 @@
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #0f0f1a;
+  color: #e0e0e0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+#root.playing {
+  justify-content: flex-start;
+  padding-top: 4rem;
+}
+@media (max-width: 600px) {
+  #root.playing { padding-top: 6rem; }
+}
+
+.btn {
+  background: linear-gradient(135deg, #e94560, #c73e54);
+  color: #fff;
+  border: none;
+  padding: 14px 40px;
+  font-size: 1.15rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.2s;
+  box-shadow: 0 4px 14px rgba(233, 69, 96, 0.35);
+  letter-spacing: 0.03em;
+}
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(233, 69, 96, 0.5);
+}
+.btn:active { transform: translateY(0); }
+
+.len-btn {
+  background: #1a1a2e;
+  color: #bbb;
+  border: 2px solid #333;
+  padding: 8px 14px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  min-width: 44px;
+}
+.len-btn:hover { border-color: #4ecca3; color: #fff; }
+.len-btn.active { background: #4ecca3; color: #0f0f1a; border-color: #4ecca3; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes shake {
+  0%   { transform: translateX(0); }
+  10%  { transform: translateX(-8px); }
+  20%  { transform: translateX(8px); }
+  30%  { transform: translateX(-6px); }
+  40%  { transform: translateX(6px); }
+  50%  { transform: translateX(-4px); }
+  60%  { transform: translateX(4px); }
+  70%  { transform: translateX(-2px); }
+  80%  { transform: translateX(2px); }
+  100% { transform: translateX(0); }
+}

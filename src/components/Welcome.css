@@ -1,0 +1,61 @@
+.welcome { text-align: center; animation: fadeIn 0.5s ease; }
+.welcome h1 {
+  font-size: 3.5rem;
+  color: #e94560;
+  margin-bottom: 0.3rem;
+  text-shadow: 0 0 30px rgba(233, 69, 96, 0.3);
+}
+.welcome .subtitle {
+  font-size: 1rem;
+  color: #888;
+  margin-bottom: 2rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+.welcome p { font-size: 1.1rem; line-height: 1.7; margin-bottom: 0.6rem; color: #aaa; }
+.welcome .btn { margin-top: 1.5rem; }
+
+.name-input {
+  width: 200px;
+  padding: 10px 14px;
+  font-size: 1.1rem;
+  border: 2px solid #2a2a40;
+  border-radius: 8px;
+  background: #16213e;
+  color: #eee;
+  text-align: center;
+  outline: none;
+  margin-top: 1.2rem;
+  transition: border-color 0.2s;
+}
+.name-input:focus { border-color: #4ecca3; box-shadow: 0 0 8px rgba(78, 204, 163, 0.2); }
+.name-label { font-size: 0.95rem; color: #aaa; margin-top: 1.2rem; display: block; }
+
+.length-select {
+  margin-top: 1.2rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+.length-select label {
+  font-size: 0.95rem;
+  color: #aaa;
+  margin-bottom: 4px;
+  width: 100%;
+}
+
+.mode-select {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+.mode-select label {
+  font-size: 0.95rem;
+  color: #aaa;
+  margin-bottom: 4px;
+  width: 100%;
+  text-align: center;
+}

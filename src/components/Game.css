@@ -1,0 +1,49 @@
+.game { text-align: center; animation: fadeIn 0.35s ease; width: 90%; max-width: 520px; cursor: text; }
+.game h1 { font-size: 2rem; color: #e94560; margin-bottom: 1.5rem; }
+.word-display {
+  font-size: 3rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #fff;
+  min-height: 4rem;
+  margin-bottom: 1.5rem;
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.1);
+}
+.word-display.sentence {
+  font-size: 1.8rem;
+  letter-spacing: 0.06em;
+  word-spacing: 0.3em;
+}
+.word-input {
+  width: 75%;
+  padding: 14px 18px;
+  font-size: 1.4rem;
+  border: 2px solid #2a2a40;
+  border-radius: 8px;
+  background: #16213e;
+  color: #eee;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+.word-input:focus {
+  border-color: #e94560;
+  box-shadow: 0 0 12px rgba(233, 69, 96, 0.25);
+}
+.word-input.explode {
+  animation: shake 0.45s ease;
+  border-color: #e94560 !important;
+  background: #2a1020 !important;
+}
+.feedback { font-size: 1.15rem; margin-top: 1rem; min-height: 1.6rem; font-weight: 700; }
+.feedback.correct { color: #4ecca3; }
+.feedback.incorrect { color: #e94560; }
+.time-display { font-size: 0.9rem; color: #666; margin-top: 0.4rem; min-height: 1.2rem; }
+.word-timer {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 1rem;
+  color: #4ecca3;
+  margin-top: 0.6rem;
+  min-height: 1.3rem;
+  opacity: 0.8;
+}
