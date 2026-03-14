@@ -823,7 +823,7 @@
           clearInterval(schedulerTimer);
           schedulerTimer = null;
           if (resumeTimer) { clearTimeout(resumeTimer); resumeTimer = null; }
-          stepDur = NORMAL_STEP;
+          stepDur = 60 / START_BPM / 2;
           playing = false;
         },
         slowDown() {
