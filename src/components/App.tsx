@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import type { GameMode, Screen, LogEntry, FeedbackState, LeaderboardEntry, LeaderboardMap, WordlistMap } from "../types";
 import MusicEngine from "../MusicEngine";
+import type { SongId } from "../MusicEngine";
 import { HUD } from "./HUD";
 import { Welcome } from "./Welcome";
 import { Game } from "./Game";
@@ -36,6 +37,13 @@ export function App() {
   const wordLengthRef = useRef(0);
   useEffect(() => { wordLengthRef.current = wordLength; }, [wordLength]);
 
+  function getSongForMode(mode: GameMode, wl: number): SongId {
+    if (mode === "sentence") return "boss";
+    if (wl >= 3 && wl <= 5) return "chill";
+    if (wl >= 10 && wl <= 12) return "boss";
+    return "default";
+  }
+
   function getLbKey(mode: GameMode, wl: number): string {
     return mode === "sentence" ? "sentence" : "word-" + wl;
   }
@@ -54,7 +62,7 @@ export function App() {
     const tryStart = (e: Event) => {
       const target = e.target as HTMLElement;
       if (target.closest && target.closest(".music-toggle")) return;
-      if (!MusicEngine.isPlaying()) MusicEngine.start();
+      if (!MusicEngine.isPlaying()) MusicEngine.start(getSongForMode(gameMode, wordLength));
       musicStartedRef.current = true;
       document.removeEventListener("click", tryStart);
       document.removeEventListener("keydown", tryStart);
@@ -210,7 +218,8 @@ export function App() {
       }
     }, 47);
     setScreen("game");
-    if (musicOn) { MusicEngine.stop(); MusicEngine.start(); }
+    const song = getSongForMode(gameMode, wordLength);
+    if (musicOn) { MusicEngine.stop(); MusicEngine.start(song); }
     setTimeout(() => nextWord(), 0);
   }, [nextWord, stopWordTimer, stopGlobalTimer, musicOn]);
 
@@ -266,7 +275,7 @@ export function App() {
         onClick={(e) => {
           e.stopPropagation();
           if (musicOn) { MusicEngine.stop(); setMusicOn(false); }
-          else { MusicEngine.start(); musicStartedRef.current = true; setMusicOn(true); }
+          else { MusicEngine.start(getSongForMode(gameMode, wordLength)); musicStartedRef.current = true; setMusicOn(true); }
         }}
         title={musicOn ? "Mute music" : "Play music"}
       >
