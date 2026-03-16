@@ -18,7 +18,6 @@ A browser-based typing speed game. Type the displayed word (or sentence) as fast
 - **Procedural chiptune soundtrack** that gradually speeds up over the round.
 - **Per-category leaderboards** saved in localStorage.
 - **Per-word time log** shown during and after each game.
-- Single self-contained `index.html` — no build step required.
 
 ## Running
 
