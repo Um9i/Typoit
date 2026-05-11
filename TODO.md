@@ -1,46 +1,72 @@
-# TODO — Typoit Browser Version
+# Roadmap — Typo.it
 
-## Done
+> A living wishlist on the way to **the best typing game on the web**. Items are roughly ordered by impact and reach: gameplay first, then content depth, then polish.
 
-- [x] Multiple songs with the current one as default
-- [x] Songs reflect difficulty (short words → chill, sentence mode → boss)
-- [x] Split `App.tsx` — extracted `useGameLoop`, `useLeaderboard`, `useWordlist` hooks plus `categories.ts` and `leaderboard.ts` pure modules
-- [x] Vitest unit tests for `fmtMs`, `getSongForMode`/category keys, and leaderboard math (22 tests)
-- [x] ESLint (`@typescript-eslint`, `react`, `react-hooks`) with `npm run lint`; CI workflow runs lint + typecheck + test + build
-- [x] In-app error banner with retry replaces `alert()` on wordlist load failure
-- [x] `dist/` removed from version control (gitignored); README updated to require `npm run build` before serving
+## ✅ Shipped
 
-## Priority 1 — Gameplay & UX
+- Multiple procedural chiptune tracks; default song on `Any`/medium difficulty.
+- Difficulty-matched soundtrack — short words → `chill`, long words & sentence mode → `boss`.
+- Architecture refactor — `App.tsx` split into `useGameLoop`, `useLeaderboard`, `useWordlist`, plus pure `categories.ts` / `leaderboard.ts` modules.
+- Vitest test suite (22 tests) covering time formatting, song selection, leaderboard keys, WPM math, and top-10 truncation.
+- ESLint (`@typescript-eslint` + `react` + `react-hooks`) with a `lint` script and CI gate.
+- CI workflow runs **lint + typecheck + test + build** on every PR and push.
+- In-app retry banner replaces the legacy `alert()` when `wordlist.json` fails to load.
+- `dist/` removed from version control; build is performed locally and in CI.
 
-- [ ] Visible per-letter progress on the current word (highlight typed prefix, show next letter)
-- [ ] Configurable round duration (30s / 60s / 120s) on the Welcome screen
-- [ ] Configurable lives (1 / 3 / 5 / unlimited)
-- [ ] Pause / resume during a round (e.g. `Esc`) without forfeiting the score
-- [ ] Show accuracy % alongside WPM in Results and on the leaderboard
-- [ ] Mobile / touch support — currently relies on a hardware keyboard
+---
 
-## Priority 2 — Content & Modes
+## 🎯 P1 — Game feel
 
-- [ ] Sentence mode: use real sentences (or Markov-generated phrases) instead of 4 random words joined by spaces
-- [ ] Punctuation / capitalization mode for advanced practice
-- [ ] Numbers / symbols mode
-- [ ] Per-user "weakest letters" tracking → adaptive practice mode
+The features players will notice first.
 
-## Priority 3 — Music & Audio
+- [ ] **Live per-letter feedback** — highlight the typed prefix, ghost the next letter, color the cursor.
+- [ ] **Configurable round length** (30 / 60 / 120 s) on the Welcome screen.
+- [ ] **Configurable lives** (1 / 3 / 5 / unlimited) for accessibility and casual play.
+- [ ] **Pause / resume** with `Esc` — pauses timer, music, and HUD without forfeiting the run.
+- [ ] **Accuracy %** alongside WPM in Results and on the leaderboard.
+- [ ] **Mobile & touch support** — virtual keyboard handling, larger tap targets, responsive layout.
 
-- [ ] Per-song volume normalization (boss is noticeably louder than chill)
-- [ ] Remember music on/off preference in `localStorage`
-- [ ] Optional SFX toggle (correct/wrong key) separate from music
+## 📚 P2 — Content depth
 
-## Priority 4 — Leaderboard & Persistence
+Make the words themselves more interesting.
 
-- [ ] Export / import leaderboard as JSON
-- [ ] Clear-leaderboard button (per category and global) with confirmation
-- [ ] Optional online leaderboard (out of scope for now — design only)
+- [ ] **Real sentences** in Sentence mode — curated corpus and/or Markov-generated phrases instead of four random words spliced together.
+- [ ] **Punctuation & capitalization** mode for realistic prose practice.
+- [ ] **Numbers & symbols** mode for power users.
+- [ ] **Adaptive practice** — track each player's slowest / most-missed letters and bias upcoming prompts toward them.
+- [ ] **Quote mode** — type famous one-liners; lean into bragging rights.
 
-## Bugs / polish
+## 🎵 P3 — Audio
 
-- [ ] Music toggle click is suppressed by the global "first interaction starts music" listener — verify it still works on first paint
-- [ ] On very fast typing, the 10 ms `setTimeout` that clears the input on `nextWord` can drop a keystroke — investigate
-- [ ] HUD overlaps the word on narrow viewports — needs responsive tweaks
-- [ ] Revisit `--legacy-peer-deps` once `eslint-plugin-react` officially supports ESLint 9 peer range
+Procedural music is the soul of this game; tighten it.
+
+- [ ] **Per-song loudness normalization** — `boss` is currently louder than `chill`.
+- [ ] **Persist music on/off preference** in `localStorage`.
+- [ ] **Volume slider** in the music toggle.
+- [ ] **Optional SFX channel** (correct / wrong keystroke) independent of music.
+
+## 🏆 P4 — Leaderboards & sharing
+
+- [ ] **Export / import leaderboards** as JSON for backup or device migration.
+- [ ] **Clear leaderboard** (per category + global) with confirmation.
+- [ ] **Shareable result cards** — copy-to-clipboard or PNG snapshot of your run.
+- [ ] **Online leaderboard** (design spike only for now — likely Cloudflare KV or a tiny serverless endpoint).
+
+## 🧪 P5 — Engineering polish
+
+- [ ] **Component tests** (React Testing Library) for `Welcome`, `Game`, `Results`.
+- [ ] **End-to-end smoke test** (Playwright) covering welcome → game → results in both modes.
+- [ ] **Pre-commit hook** (husky + lint-staged) for lint + typecheck on staged files.
+- [ ] **Bundle size budget** in CI — fail PRs that bloat `dist/game.js`.
+- [ ] **Source maps** in the deployed build for easier debugging.
+
+## 🐛 Bugs & rough edges
+
+- [ ] Music toggle click occasionally races the global "first interaction starts music" listener on first paint — verify.
+- [ ] The 10 ms `setTimeout` that clears the input on `nextWord` can swallow a keystroke from very fast typers — investigate replacing with a controlled input or `requestAnimationFrame` gate.
+- [ ] HUD overlaps the current word on narrow viewports — responsive tweaks needed.
+- [ ] Revisit `--legacy-peer-deps` once `eslint-plugin-react` officially supports ESLint 9.
+
+---
+
+*Have an idea that should be here? Open an issue or a PR.*
