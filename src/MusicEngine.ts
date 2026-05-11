@@ -793,7 +793,10 @@ const MusicEngine = (() => {
     start(songId?: SongId) {
       if (playing) return;
       if (songId) activeSong = songId;
-      if (!ctx) ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      if (!ctx) {
+        const w = window as Window & { webkitAudioContext?: typeof AudioContext };
+        ctx = new (window.AudioContext || w.webkitAudioContext!)();
+      }
       if (ctx.state === "suspended") ctx.resume();
       gainNode = ctx.createGain();
       gainNode.gain.value = 0.45;

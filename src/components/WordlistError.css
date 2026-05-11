@@ -1,0 +1,44 @@
+.wordlist-error {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  z-index: 9999;
+  padding: 1rem;
+}
+
+.wordlist-error__panel {
+  max-width: 32rem;
+  background: #1a1a1a;
+  border: 1px solid #ff5252;
+  padding: 1.5rem;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.wordlist-error__panel h2 {
+  margin: 0 0 0.75rem;
+  color: #ff5252;
+}
+
+.wordlist-error__panel p {
+  margin: 0 0 1rem;
+  line-height: 1.4;
+}
+
+.wordlist-error__panel button {
+  background: #ff5252;
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1.25rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.wordlist-error__panel button:hover {
+  filter: brightness(1.1);
+}

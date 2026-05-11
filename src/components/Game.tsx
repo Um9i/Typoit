@@ -1,4 +1,4 @@
-import React, { useRef, useCallback } from "react";
+import React from "react";
 import type { GameMode, FeedbackState } from "../types";
 import { fmtMs } from "../utils";
 import "./Game.css";

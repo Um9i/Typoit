@@ -21,10 +21,22 @@ A browser-based typing speed game. Type the displayed word (or sentence) as fast
 
 ## Running
 
-Serve the project directory with any static file server, e.g.:
+Install dependencies and build the bundle, then serve the project directory with any static file server:
 
 ```
+npm install --legacy-peer-deps
+npm run build
 python3 -m http.server
 ```
 
 Then open `http://localhost:8000` in a browser.
+
+For development, run `npm run watch` in a separate terminal to rebuild on changes.
+
+## Scripts
+
+- `npm run build` — production bundle to `dist/`.
+- `npm run watch` — esbuild in watch mode.
+- `npm run typecheck` — `tsc --noEmit`.
+- `npm run lint` — ESLint.
+- `npm test` — Vitest unit tests.
